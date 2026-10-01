@@ -1,33 +1,172 @@
-"use strict";
-document.documentElement.classList.add("js");
-const navShell=document.querySelector(".nav-shell");
-const menuToggle=document.getElementById("menuToggle");
-const navLinks=document.getElementById("navLinks");
-function closeMenu(){navLinks.classList.remove("open");menuToggle.setAttribute("aria-expanded","false");menuToggle.setAttribute("aria-label","Åbn menu");document.body.classList.remove("menu-open");}
-menuToggle.addEventListener("click",()=>{const open=navLinks.classList.toggle("open");menuToggle.setAttribute("aria-expanded",String(open));menuToggle.setAttribute("aria-label",open?"Luk menu":"Åbn menu");document.body.classList.toggle("menu-open",open);});
-navLinks.querySelectorAll("a").forEach(a=>a.addEventListener("click",closeMenu));
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&navLinks.classList.contains("open")){closeMenu();menuToggle.focus();}});
-window.matchMedia("(min-width:901px)").addEventListener("change",e=>{if(e.matches)closeMenu();});
-if("IntersectionObserver" in window){const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("visible");observer.unobserve(entry.target);}});},{threshold:.08});document.querySelectorAll(".reveal").forEach(el=>observer.observe(el));}
-const tabs=[...document.querySelectorAll(".showcase-tab")];
-const slides=[...document.querySelectorAll(".showcase-slide")];
-let activeSlide=0;
-function showSlide(index,focus=false){activeSlide=(index+slides.length)%slides.length;tabs.forEach((tab,i)=>{tab.classList.toggle("active",i===activeSlide);tab.setAttribute("aria-selected",String(i===activeSlide));tab.tabIndex=i===activeSlide?0:-1;});slides.forEach((slide,i)=>slide.classList.toggle("active",i===activeSlide));document.getElementById("progressNumber").textContent=`0${activeSlide+1} / 03`;document.getElementById("progressFill").style.width=`${(activeSlide+1)/slides.length*100}%`;if(focus)tabs[activeSlide].focus();}
-tabs.forEach((tab,i)=>{tab.addEventListener("click",()=>showSlide(i));tab.addEventListener("keydown",e=>{const direction={ArrowRight:1,ArrowLeft:-1};if(e.key in direction){e.preventDefault();showSlide(activeSlide+direction[e.key],true);}if(e.key==="Home"||e.key==="End"){e.preventDefault();showSlide(e.key==="Home"?0:slides.length-1,true);}});});
-document.getElementById("previousSlide").addEventListener("click",()=>showSlide(activeSlide-1));document.getElementById("nextSlide").addEventListener("click",()=>showSlide(activeSlide+1));
-const projects={restaurant:{name:"BORD — restaurant",message:"Jeg vil gerne høre om et restaurant-website i stil med BORD-eksemplet."},salon:{name:"FORM SALON — frisør",message:"Jeg vil gerne høre om et frisør-website i stil med FORM SALON-eksemplet."},renovation:{name:"RUM RENOVERING — renovering",message:"Jeg vil gerne høre om et website i stil med RUM RENOVERING-eksemplet."}};
-const dialog=document.getElementById("designDialog");let previewProject="restaurant";let lastTrigger;
-function inquire(key){const input=document.getElementById("message");if(!input.value.trim())input.value=projects[key].message;location.hash="contact";document.getElementById("name").focus({preventScroll:true});}
-document.querySelectorAll("[data-inquiry]").forEach(a=>a.addEventListener("click",()=>{const input=document.getElementById("message");if(!input.value.trim())input.value=projects[a.dataset.inquiry].message;}));
-document.querySelectorAll("[data-preview]").forEach(button=>button.addEventListener("click",()=>{previewProject=button.dataset.preview;lastTrigger=button;const project=projects[previewProject];document.getElementById("dialogTitle").textContent=project.name;const image=document.getElementById("dialogImage");image.src=document.querySelector(`[data-project="${previewProject}"] img`).src;image.alt=`Designeksempel: ${project.name}`;dialog.showModal();document.body.style.overflow="hidden";}));
-document.getElementById("closeDialog").addEventListener("click",()=>dialog.close());
-dialog.addEventListener("click",e=>{if(e.target===dialog){const rect=dialog.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)dialog.close();}});
-dialog.addEventListener("close",()=>{document.body.style.overflow="";lastTrigger?.focus({preventScroll:true});});
-document.getElementById("dialogInquiry").addEventListener("click",()=>{dialog.close();inquire(previewProject);});
-const toast=document.getElementById("siteToast");let toastTimer;
-function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove("show"),3200);}
-async function copyText(value){try{await navigator.clipboard.writeText(value);return true;}catch{const area=document.createElement("textarea");area.value=value;area.style.position="fixed";area.style.opacity="0";document.body.append(area);area.select();const result=document.execCommand("copy");area.remove();return result;}}
-document.querySelectorAll(".copy-contact").forEach(button=>button.addEventListener("click",async()=>{const ok=await copyText(button.dataset.copy);showToast(ok?"E-mail kopieret":"E-mail: chilasclaville@gmail.com");}));
-const form=document.getElementById("contactForm");const status=document.getElementById("formStatus");
-form.addEventListener("submit",event=>{event.preventDefault();const name=document.getElementById("name").value.trim();const business=document.getElementById("business").value.trim();const email=document.getElementById("email").value.trim();const message=document.getElementById("message").value.trim();if(!name||!email||!message){status.textContent="Udfyld navn, e-mail og besked.";return;}const subject=`Hjemmesideforespørgsel${business?" — "+business:""}`;const body=`Hej Chilas,\n\nJeg vil gerne høre om en hjemmeside.\n\nNavn: ${name}\nVirksomhed: ${business||"—"}\nE-mail: ${email}\n\n${message}`;const mailto=`mailto:chilasclaville@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;document.getElementById("preparedMessage").value=`Til: chilasclaville@gmail.com\nEmne: ${subject}\n\n${body}`;document.getElementById("preparedMailLink").href=mailto;document.getElementById("preparedEmail").hidden=false;status.textContent="Din besked er klar. Send den i din mailapp. Hvis den ikke åbner, kan du kopiere beskeden nedenfor.";window.location.href=mailto;});
-document.getElementById("copyMessage").addEventListener("click",async()=>{const field=document.getElementById("preparedMessage");const ok=await copyText(field.value);if(ok)showToast("Beskeden er kopieret");else{field.focus();field.select();status.textContent="Markér og kopiér beskeden, og send den til chilasclaville@gmail.com.";}});
+const navShell = document.querySelector(".nav-shell");
+const menuToggle = document.getElementById("menuToggle");
+const navLinks = document.getElementById("navLinks");
+
+window.addEventListener("scroll", () => {
+  navShell.classList.toggle("scrolled", window.scrollY > 24);
+});
+
+menuToggle?.addEventListener("click", () => {
+  const open = navLinks.classList.toggle("open");
+  menuToggle.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("menu-open", open);
+});
+
+document.querySelectorAll(".nav-links a").forEach(link => {
+  link.addEventListener("click", () => {
+    navLinks.classList.remove("open");
+    document.body.classList.remove("menu-open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  });
+});
+
+// Reveal animation
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("visible");
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+// Showcase tabs
+const tabs = [...document.querySelectorAll(".showcase-tab")];
+const slides = [...document.querySelectorAll(".showcase-slide")];
+const progressNumber = document.getElementById("progressNumber");
+const progressFill = document.getElementById("progressFill");
+let activeSlide = 0;
+let autoSlide;
+
+function showSlide(index) {
+  activeSlide = index;
+  tabs.forEach((tab, i) => tab.classList.toggle("active", i === index));
+  slides.forEach((slide, i) => slide.classList.toggle("active", i === index));
+  progressNumber.textContent = `0${index + 1}`;
+  progressFill.style.width = `${((index + 1) / slides.length) * 100}%`;
+}
+
+function restartSlider() {
+  clearInterval(autoSlide);
+  autoSlide = setInterval(() => {
+    showSlide((activeSlide + 1) % slides.length);
+  }, 6500);
+}
+
+tabs.forEach((tab, index) => {
+  tab.addEventListener("click", () => {
+    showSlide(index);
+    restartSlider();
+  });
+});
+restartSlider();
+
+// Cursor glow on desktop
+const glow = document.getElementById("cursorGlow");
+if (window.matchMedia("(pointer:fine)").matches && glow) {
+  window.addEventListener("mousemove", e => {
+    glow.style.left = `${e.clientX}px`;
+    glow.style.top = `${e.clientY}px`;
+  });
+}
+
+// Subtle magnetic movement
+document.querySelectorAll(".magnetic").forEach(button => {
+  button.addEventListener("mousemove", e => {
+    const rect = button.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) * 0.08;
+    const y = (e.clientY - rect.top - rect.height / 2) * 0.08;
+    button.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  button.addEventListener("mouseleave", () => {
+    button.style.transform = "";
+  });
+});
+
+// Contact form - prepares an email and provides a fallback
+const form = document.getElementById("contactForm");
+const status = document.getElementById("formStatus");
+const toast = document.getElementById("siteToast");
+
+function showToast(message) {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+async function copyText(value, successMessage) {
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast(successMessage);
+    return true;
+  } catch {
+    // Fallback for browsers that block navigator.clipboard
+    const area = document.createElement("textarea");
+    area.value = value;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    if (ok) showToast(successMessage);
+    return ok;
+  }
+}
+
+document.querySelectorAll(".copy-contact").forEach(button => {
+  button.addEventListener("click", () => {
+    copyText(button.dataset.copy, "E-mail kopieret");
+  });
+});
+
+// On desktop, phone links may have no dialer. The normal tel: link is still kept,
+// but we also allow a long/modified click fallback through copy buttons/contact data.
+document.querySelectorAll(".js-phone-link").forEach(link => {
+  link.addEventListener("contextmenu", () => {
+    copyText("51 14 40 46", "Telefonnummer kopieret");
+  });
+});
+
+form?.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const business = document.getElementById("business").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const message = document.getElementById("message").value.trim();
+
+  const subjectText = `Hjemmeside forespørgsel${business ? " - " + business : ""}`;
+  const bodyText =
+`Hej Chilas,
+
+Jeg vil gerne høre mere om en hjemmeside.
+
+Navn: ${name}
+Virksomhed: ${business || "-"}
+E-mail: ${email}
+
+Besked:
+${message}`;
+
+  const mailto = `mailto:chilasclaville@gmail.com?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(bodyText)}`;
+
+  status.textContent = "Åbner din mailapp…";
+  window.location.href = mailto;
+
+  // Fallback: copy the complete message in case the visitor has no mail app configured.
+  setTimeout(async () => {
+    const copied = await copyText(
+      `Til: chilasclaville@gmail.com\nEmne: ${subjectText}\n\n${bodyText}`,
+      "Beskeden er kopieret som backup"
+    );
+    status.textContent = copied
+      ? "Hvis mailappen ikke åbnede, er beskeden kopieret. Send den til chilasclaville@gmail.com."
+      : "Hvis mailappen ikke åbnede, skriv direkte til chilasclaville@gmail.com.";
+  }, 1200);
+});
