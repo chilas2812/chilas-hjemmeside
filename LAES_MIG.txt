@@ -1,0 +1,15 @@
+Chilas — Cloudflare-klar hjemmeside
+
+Upload hele indholdet til GitHub. Bevar public-mappen.
+Projektet i Cloudflare skal hedde min-egen-website.
+
+Build command:
+mkdir -p public && cp index.html style.css script.js public/
+
+Deploy command:
+npx wrangler deploy
+
+public-mappen medfølger, så den almindelige deploy-kommando også finder filerne uden et build.
+
+ZIP-filen er testet med Wrangler 4.145.0 dry-run. Der er ikke udført en offentlig udgivelse.
+Kontaktformularen åbner besøgendes mailapp.
