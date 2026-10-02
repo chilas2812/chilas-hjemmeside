@@ -1,80 +1,172 @@
+const navShell = document.querySelector(".nav-shell");
 const menuToggle = document.getElementById("menuToggle");
 const navLinks = document.getElementById("navLinks");
+
+window.addEventListener("scroll", () => {
+  navShell.classList.toggle("scrolled", window.scrollY > 24);
+});
 
 menuToggle?.addEventListener("click", () => {
   const open = navLinks.classList.toggle("open");
   menuToggle.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("menu-open", open);
 });
 
-document.querySelectorAll(".nav-links a").forEach(a => {
-  a.addEventListener("click", () => {
+document.querySelectorAll(".nav-links a").forEach(link => {
+  link.addEventListener("click", () => {
     navLinks.classList.remove("open");
-    menuToggle?.setAttribute("aria-expanded","false");
+    document.body.classList.remove("menu-open");
+    menuToggle?.setAttribute("aria-expanded", "false");
   });
 });
 
-const reveals = document.querySelectorAll(".reveal");
-const observer = new IntersectionObserver(entries => {
+// Reveal animation
+const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       entry.target.classList.add("visible");
       observer.unobserve(entry.target);
     }
   });
-},{threshold:.12});
-reveals.forEach(el => observer.observe(el));
+}, { threshold: 0.12 });
 
-const slides = [...document.querySelectorAll(".slide")];
-const dots = [...document.querySelectorAll(".dot")];
-const currentSlide = document.getElementById("currentSlide");
-const prev = document.getElementById("prevSlide");
-const next = document.getElementById("nextSlide");
-let active = 0;
+document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
 
-function showSlide(index){
-  active = (index + slides.length) % slides.length;
-  slides.forEach((s,i)=>s.classList.toggle("active",i===active));
-  dots.forEach((d,i)=>d.classList.toggle("active",i===active));
-  currentSlide.textContent = String(active+1).padStart(2,"0");
+// Showcase tabs
+const tabs = [...document.querySelectorAll(".showcase-tab")];
+const slides = [...document.querySelectorAll(".showcase-slide")];
+const progressNumber = document.getElementById("progressNumber");
+const progressFill = document.getElementById("progressFill");
+let activeSlide = 0;
+let autoSlide;
+
+function showSlide(index) {
+  activeSlide = index;
+  tabs.forEach((tab, i) => tab.classList.toggle("active", i === index));
+  slides.forEach((slide, i) => slide.classList.toggle("active", i === index));
+  progressNumber.textContent = `0${index + 1}`;
+  progressFill.style.width = `${((index + 1) / slides.length) * 100}%`;
 }
-prev?.addEventListener("click",()=>showSlide(active-1));
-next?.addEventListener("click",()=>showSlide(active+1));
-dots.forEach((dot,i)=>dot.addEventListener("click",()=>showSlide(i)));
 
-const copyEmail = document.getElementById("copyEmail");
-const copyStatus = document.getElementById("copyStatus");
-copyEmail?.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText("chilasclaville@gmail.com");
-    copyStatus.textContent = "E-mail kopieret.";
-  } catch {
-    copyStatus.textContent = "E-mail: chilasclaville@gmail.com";
-  }
+function restartSlider() {
+  clearInterval(autoSlide);
+  autoSlide = setInterval(() => {
+    showSlide((activeSlide + 1) % slides.length);
+  }, 6500);
+}
+
+tabs.forEach((tab, index) => {
+  tab.addEventListener("click", () => {
+    showSlide(index);
+    restartSlider();
+  });
+});
+restartSlider();
+
+// Cursor glow on desktop
+const glow = document.getElementById("cursorGlow");
+if (window.matchMedia("(pointer:fine)").matches && glow) {
+  window.addEventListener("mousemove", e => {
+    glow.style.left = `${e.clientX}px`;
+    glow.style.top = `${e.clientY}px`;
+  });
+}
+
+// Subtle magnetic movement
+document.querySelectorAll(".magnetic").forEach(button => {
+  button.addEventListener("mousemove", e => {
+    const rect = button.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) * 0.08;
+    const y = (e.clientY - rect.top - rect.height / 2) * 0.08;
+    button.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  button.addEventListener("mouseleave", () => {
+    button.style.transform = "";
+  });
 });
 
+// Contact form - prepares an email and provides a fallback
 const form = document.getElementById("contactForm");
-const formStatus = document.getElementById("formStatus");
+const status = document.getElementById("formStatus");
+const toast = document.getElementById("siteToast");
 
-form?.addEventListener("submit", e => {
-  e.preventDefault();
+function showToast(message) {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+async function copyText(value, successMessage) {
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast(successMessage);
+    return true;
+  } catch {
+    // Fallback for browsers that block navigator.clipboard
+    const area = document.createElement("textarea");
+    area.value = value;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    if (ok) showToast(successMessage);
+    return ok;
+  }
+}
+
+document.querySelectorAll(".copy-contact").forEach(button => {
+  button.addEventListener("click", () => {
+    copyText(button.dataset.copy, "E-mail kopieret");
+  });
+});
+
+// On desktop, phone links may have no dialer. The normal tel: link is still kept,
+// but we also allow a long/modified click fallback through copy buttons/contact data.
+document.querySelectorAll(".js-phone-link").forEach(link => {
+  link.addEventListener("contextmenu", () => {
+    copyText("51 14 40 46", "Telefonnummer kopieret");
+  });
+});
+
+form?.addEventListener("submit", event => {
+  event.preventDefault();
 
   const name = document.getElementById("name").value.trim();
   const business = document.getElementById("business").value.trim();
   const email = document.getElementById("email").value.trim();
-  const interest = document.getElementById("interest").value;
   const message = document.getElementById("message").value.trim();
 
-  const subject = encodeURIComponent(`Forespørgsel om hjemmeside${business ? " - " + business : ""}`);
-  const body = encodeURIComponent(
-`Navn: ${name}
+  const subjectText = `Hjemmeside forespørgsel${business ? " - " + business : ""}`;
+  const bodyText =
+`Hej Chilas,
+
+Jeg vil gerne høre mere om en hjemmeside.
+
+Navn: ${name}
 Virksomhed: ${business || "-"}
 E-mail: ${email}
-Interesse: ${interest}
 
 Besked:
-${message}`
-  );
+${message}`;
 
-  formStatus.textContent = "Din mailapp åbner med beskeden klar.";
-  window.location.href = `mailto:chilasclaville@gmail.com?subject=${subject}&body=${body}`;
+  const mailto = `mailto:chilasclaville@gmail.com?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(bodyText)}`;
+
+  status.textContent = "Åbner din mailapp…";
+  window.location.href = mailto;
+
+  // Fallback: copy the complete message in case the visitor has no mail app configured.
+  setTimeout(async () => {
+    const copied = await copyText(
+      `Til: chilasclaville@gmail.com\nEmne: ${subjectText}\n\n${bodyText}`,
+      "Beskeden er kopieret som backup"
+    );
+    status.textContent = copied
+      ? "Hvis mailappen ikke åbnede, er beskeden kopieret. Send den til chilasclaville@gmail.com."
+      : "Hvis mailappen ikke åbnede, skriv direkte til chilasclaville@gmail.com.";
+  }, 1200);
 });
